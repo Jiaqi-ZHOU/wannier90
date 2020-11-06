@@ -408,7 +408,7 @@ contains
 
     ! Set up adaptive refinement mesh
     !
-    allocate (adkpt(3, berry_curv_adpt_kmesh**3), stat=ierr)
+    allocate (adkpt(3, PRODUCT(berry_curv_adpt_kmesh)), stat=ierr)
     if (ierr /= 0) call io_error('Error in allocating adkpt in berry')
     ikpt = 0
     !
@@ -427,13 +427,13 @@ contains
     !
     ! NEW VERSION (both even and odd grids)
     !
-    do i = 0, berry_curv_adpt_kmesh - 1
-      do j = 0, berry_curv_adpt_kmesh - 1
-        do k = 0, berry_curv_adpt_kmesh - 1
+    do i = 0, berry_curv_adpt_kmesh(1) - 1
+      do j = 0, berry_curv_adpt_kmesh(2) - 1
+        do k = 0, berry_curv_adpt_kmesh(3) - 1
           ikpt = ikpt + 1
-          adkpt(1, ikpt) = db1*((i + 0.5_dp)/berry_curv_adpt_kmesh - 0.5_dp)
-          adkpt(2, ikpt) = db2*((j + 0.5_dp)/berry_curv_adpt_kmesh - 0.5_dp)
-          adkpt(3, ikpt) = db3*((k + 0.5_dp)/berry_curv_adpt_kmesh - 0.5_dp)
+          adkpt(1, ikpt) = db1*((i + 0.5_dp)/berry_curv_adpt_kmesh(1) - 0.5_dp)
+          adkpt(2, ikpt) = db2*((j + 0.5_dp)/berry_curv_adpt_kmesh(2) - 0.5_dp)
+          adkpt(3, ikpt) = db3*((k + 0.5_dp)/berry_curv_adpt_kmesh(3) - 0.5_dp)
         end do
       end do
     end do
@@ -461,7 +461,7 @@ contains
       do loop_xyz = 1, num_int_kpts_on_node(my_node_id)
         kpt(:) = int_kpts(:, loop_xyz)
         kweight = weight(loop_xyz)
-        kweight_adpt = kweight/berry_curv_adpt_kmesh**3
+        kweight_adpt = kweight/PRODUCT(berry_curv_adpt_kmesh)
         !               .
         ! ***BEGIN COPY OF CODE BLOCK 1***
         !
@@ -482,7 +482,7 @@ contains
             endif
           enddo
           if (any(ladpt)) then
-            do loop_adpt = 1, berry_curv_adpt_kmesh**3
+            do loop_adpt = 1, PRODUCT(berry_curv_adpt_kmesh)
               ! Using imf_k_list here would corrupt values for other
               ! frequencies, hence dummy. Only if-th element is used
               call berry_get_imf_klist(kpt(:) + adkpt(:, loop_adpt), &
@@ -541,7 +541,7 @@ contains
             ladpt_kmesh = .false.
             !if adpt_kmesh==1, no need to calculate on the same kpt again.
             !This happens if adpt_kmesh==1 while adpt_kmesh_thresh is low.
-            if (berry_curv_adpt_kmesh > 1) then
+            if (PRODUCT(berry_curv_adpt_kmesh) > 1) then
               do if = 1, nfermi
                 rdum = abs(shc_k_fermi(if))
                 if (berry_curv_unit == 'bohr2') rdum = rdum/bohr**2
@@ -555,7 +555,7 @@ contains
               ladpt_kmesh = .false.
             end if
             if (ladpt_kmesh) then
-              do loop_adpt = 1, berry_curv_adpt_kmesh**3
+              do loop_adpt = 1, PRODUCT(berry_curv_adpt_kmesh)
                 !Using shc_k here would corrupt values for other
                 !kpt, hence dummy. Only if-th element is used.
                 call berry_get_shc_klist(kpt(:) + adkpt(:, loop_adpt), &
@@ -578,7 +578,7 @@ contains
     else ! Do not read 'kpoint.dat'. Loop over a regular grid in the full BZ
 
       kweight = db1*db2*db3
-      kweight_adpt = kweight/berry_curv_adpt_kmesh**3
+      kweight_adpt = kweight/PRODUCT(berry_curv_adpt_kmesh)
 
 #ifdef DEBUG
       if (on_root) then
@@ -642,7 +642,7 @@ contains
             endif
           enddo
           if (any(ladpt)) then
-            do loop_adpt = 1, berry_curv_adpt_kmesh**3
+            do loop_adpt = 1, PRODUCT(berry_curv_adpt_kmesh)
               ! Using imf_k_list here would corrupt values for other
               ! frequencies, hence dummy. Only if-th element is used
               call berry_get_imf_klist(kpt(:) + adkpt(:, loop_adpt), &
@@ -701,7 +701,7 @@ contains
             ladpt_kmesh = .false.
             !if adpt_kmesh==1, no need to calculate on the same kpt again.
             !This happens if adpt_kmesh==1 while adpt_kmesh_thresh is low.
-            if (berry_curv_adpt_kmesh > 1) then
+            if (product(berry_curv_adpt_kmesh) > 1) then
               do if = 1, nfermi
                 rdum = abs(shc_k_fermi(if))
                 if (berry_curv_unit == 'bohr2') rdum = rdum/bohr**2
@@ -715,7 +715,7 @@ contains
               ladpt_kmesh = .false.
             end if
             if (ladpt_kmesh) then
-              do loop_adpt = 1, berry_curv_adpt_kmesh**3
+              do loop_adpt = 1, PRODUCT(berry_curv_adpt_kmesh)
                 !Using shc_k here would corrupt values for other
                 !kpt, hence dummy. Only if-th element is used.
                 call berry_get_shc_klist(kpt(:) + adkpt(:, loop_adpt), &
@@ -794,11 +794,11 @@ contains
 
       if (timing_level > 1) call io_stopwatch('berry: k-interpolation', 2)
       write (stdout, '(1x,a)') ' '
-      if (eval_ahc .and. berry_curv_adpt_kmesh .ne. 1) then
+      if (eval_ahc .and. product(berry_curv_adpt_kmesh) .ne. 1) then
         if (.not. wanint_kpoint_file) write (stdout, '(1x,a28,3(i0,1x))') &
           'Regular interpolation grid: ', berry_kmesh
         write (stdout, '(1x,a28,3(i0,1x))') 'Adaptive refinement grid: ', &
-          berry_curv_adpt_kmesh, berry_curv_adpt_kmesh, berry_curv_adpt_kmesh
+          berry_curv_adpt_kmesh(1), berry_curv_adpt_kmesh(2), berry_curv_adpt_kmesh(3)
         if (berry_curv_unit == 'ang2') then
           write (stdout, '(1x,a28,a17,f6.2,a)') &
             'Refinement threshold: ', 'Berry curvature >', &
@@ -823,13 +823,13 @@ contains
           endif
         endif
       elseif (eval_shc) then
-        if (berry_curv_adpt_kmesh .ne. 1) then
+        if (product(berry_curv_adpt_kmesh) .ne. 1) then
           if (.not. wanint_kpoint_file) write (stdout, '(1x,a28,3(i0,1x))') &
             'Regular interpolation grid: ', berry_kmesh
           if (.not. shc_freq_scan) then
             write (stdout, '(1x,a28,3(i0,1x))') &
               'Adaptive refinement grid: ', &
-              berry_curv_adpt_kmesh, berry_curv_adpt_kmesh, berry_curv_adpt_kmesh
+              berry_curv_adpt_kmesh(1), berry_curv_adpt_kmesh(2), berry_curv_adpt_kmesh(3)
             if (berry_curv_unit == 'ang2') then
               write (stdout, '(1x,a28,f12.2,a)') &
                 'Refinement threshold: ', &

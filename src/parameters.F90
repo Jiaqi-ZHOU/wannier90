@@ -198,7 +198,7 @@ module w90_parameters
 !  integer,           public, save :: beta
 !  integer,           public, save :: gamma
   ! --------------remove eventually----------------
-  integer, public, save :: berry_curv_adpt_kmesh
+  integer, public, save :: berry_curv_adpt_kmesh(3)
   real(kind=dp), public, save :: berry_curv_adpt_kmesh_thresh
   character(len=20), public, save :: berry_curv_unit
   logical, public, save :: kubo_adpt_smr
@@ -1236,15 +1236,22 @@ contains
 !-------------------------------------------------------
 
     berry_curv_adpt_kmesh = 1
-    call param_get_keyword('berry_curv_adpt_kmesh', found, &
-                           i_value=berry_curv_adpt_kmesh)
-    if (berry_curv_adpt_kmesh < 1) &
-      call io_error( &
-      'Error:  berry_curv_adpt_kmesh must be a positive integer')
-
-    berry_curv_adpt_kmesh_thresh = 100.0_dp
-    call param_get_keyword('berry_curv_adpt_kmesh_thresh', found, &
-                           r_value=berry_curv_adpt_kmesh_thresh)
+    call param_get_vector_length('berry_curv_adpt_kmesh', found, length=i)
+    if (found) then
+      if (i .eq. 1) then
+        call param_get_keyword_vector('berry_curv_adpt_kmesh', found, 1, &
+                                      i_value=berry_curv_adpt_kmesh)
+        berry_curv_adpt_kmesh(2) = berry_curv_adpt_kmesh(1)
+        berry_curv_adpt_kmesh(3) = berry_curv_adpt_kmesh(1)
+      elseif (i .eq. 3) then
+        call param_get_keyword_vector('berry_curv_adpt_kmesh', found, 3, &
+                                      i_value=berry_curv_adpt_kmesh)
+      else
+        call io_error('Error: berry_curv_adpt_kmesh must be provided as either one integer or a vector of three integers')
+      end if
+      if (any(berry_curv_adpt_kmesh <= 0)) &
+        call io_error('Error: berry_curv_adpt_kmesh elements must be greater than zero')
+    end if
 
     berry_curv_unit = 'ang2'
     call param_get_keyword('berry_curv_unit', found, c_value=berry_curv_unit)
@@ -3274,8 +3281,9 @@ contains
             , berry_kmesh(1), 'x', berry_kmesh(2), 'x', berry_kmesh(3), '|'
         endif
       endif
-      if (berry_curv_adpt_kmesh > 1) then
-        write (stdout, '(1x,a46,10x,i8,13x,a1)') '|  Using an adaptive refinement mesh of size :', berry_curv_adpt_kmesh, '|'
+      if (PRODUCT(berry_curv_adpt_kmesh) > 1) then
+        write (stdout, '(1x,a46,2x,i4,1x,a1,i4,1x,a1,i4,13x,1a)') '|  Using an adaptive refinement mesh of size :', &
+         berry_curv_adpt_kmesh(1), 'x', berry_curv_adpt_kmesh(2), 'x', berry_curv_adpt_kmesh(3),'|'
         write (stdout, '(1x,a46,10x,f8.3,13x,a1)') '|  Threshold for adaptive refinement         :', &
           berry_curv_adpt_kmesh_thresh, '|'
       else
@@ -6165,7 +6173,7 @@ contains
     call comms_bcast(berry_task, len(berry_task))
     call comms_bcast(berry_kmesh_spacing, 1)
     call comms_bcast(berry_kmesh(1), 3)
-    call comms_bcast(berry_curv_adpt_kmesh, 1)
+    call comms_bcast(berry_curv_adpt_kmesh(1), 3)
     call comms_bcast(berry_curv_adpt_kmesh_thresh, 1)
     call comms_bcast(berry_curv_unit, len(berry_curv_unit))
 !  Stepan Tsirkin

@@ -268,7 +268,7 @@ contains
     call comms_bcast(berry_task, len(berry_task))
     call comms_bcast(berry_kmesh_spacing, 1)
     call comms_bcast(berry_kmesh(1), 3)
-    call comms_bcast(berry_curv_adpt_kmesh, 1)
+    call comms_bcast(berry_curv_adpt_kmesh(1), 3)
     call comms_bcast(berry_curv_adpt_kmesh_thresh, 1)
     call comms_bcast(berry_curv_unit, len(berry_curv_unit))
 
