@@ -1235,6 +1235,10 @@ contains
 !    call param_get_keyword('gamma',found,i_value=gamma)
 !-------------------------------------------------------
 
+    berry_curv_adpt_kmesh_thresh = 100.0_dp
+    call param_get_keyword('berry_curv_adpt_kmesh_thresh', found, &
+                            r_value=berry_curv_adpt_kmesh_thresh)
+
     berry_curv_adpt_kmesh = 1
     call param_get_vector_length('berry_curv_adpt_kmesh', found, length=i)
     if (found) then
@@ -1252,10 +1256,6 @@ contains
       if (any(berry_curv_adpt_kmesh <= 0)) &
         call io_error('Error: berry_curv_adpt_kmesh elements must be greater than zero')
     end if
-
-    berry_curv_adpt_kmesh_thresh = 100.0_dp
-    call param_get_keyword('berry_curv_adpt_kmesh_thresh', found, &
-                           r_value=berry_curv_adpt_kmesh_thresh)
 
     berry_curv_unit = 'ang2'
     call param_get_keyword('berry_curv_unit', found, c_value=berry_curv_unit)
